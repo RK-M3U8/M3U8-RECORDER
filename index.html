@@ -8,7 +8,7 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f3f4f6;
+      background: #f9fafb;
     }
     header {
       background-color: #111827;
@@ -25,23 +25,23 @@
       color: #6ee7b7;
     }
     .container {
-      max-width: 800px;
+      max-width: 850px;
       margin: 2rem auto;
       background: white;
       padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      border-radius: 14px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
     }
     input[type="url"] {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
       margin-top: 10px;
-      border-radius: 5px;
+      border-radius: 6px;
       border: 1px solid #ccc;
     }
     .btn {
-      margin: 10px 5px 10px 0;
+      margin: 10px 5px 0 0;
       padding: 10px 20px;
       font-size: 15px;
       border: none;
@@ -58,13 +58,15 @@
     .channel-item {
       margin: 10px 0;
       padding: 10px;
-      background: #f9fafb;
+      background: #f3f4f6;
       border: 1px solid #ddd;
-      border-radius: 5px;
+      border-radius: 6px;
     }
     video {
       width: 100%;
+      height: auto;
       margin-top: 15px;
+      border-radius: 10px;
     }
     .modal {
       display: none;
@@ -83,7 +85,13 @@
       border-radius: 10px;
       position: relative;
     }
-    .close { position: absolute; right: 20px; top: 10px; cursor: pointer; }
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 10px;
+      font-size: 22px;
+      cursor: pointer;
+    }
     .popup {
       position: fixed;
       top: 20%;
@@ -94,6 +102,17 @@
       border-radius: 10px;
       z-index: 99;
       box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .extension-links {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .extension-links a {
+      flex: 1;
       text-align: center;
     }
   </style>
@@ -109,18 +128,23 @@
   <label>Enter .m3u8 / .ts / Playlist URL:</label>
   <input type="url" id="streamUrl" placeholder="https://example.com/stream.m3u8" />
 
-  <br/><br/>
-  <button class="btn btn-start" id="startBtn" onclick="startRecording()">Start Recording</button>
-  <button class="btn btn-stop" id="stopBtn" style="display:none;" onclick="stopRecording()">Stop Recording</button>
-  <button class="btn btn-watch" onclick="parsePlaylist()">Parse Playlist</button>
-  <button class="btn btn-tutorial" onclick="showTutorial()">Sniffer Tutorial</button>
+  <div style="margin-top: 10px;">
+    <button class="btn btn-start" id="startBtn" onclick="startRecording()">Start Recording</button>
+    <button class="btn btn-stop" id="stopBtn" style="display:none;" onclick="stopRecording()">Stop Recording</button>
+    <button class="btn btn-watch" onclick="parsePlaylist()">Parse Playlist</button>
+    <button class="btn btn-tutorial" onclick="showTutorial()">How To Use</button>
+  </div>
 
   <div id="videoContainer"></div>
   <div id="channelList"></div>
 
-  <div class="extension-links" style="margin-top:20px;">
-    <a class="btn btn-tutorial" href="https://chrome.google.com/webstore/detail/video-downloader-helper/njddlnmjgiophpoahlmgiiaepkpponok" target="_blank">Chrome Extension: Video Downloader Helper</a>
-    <a class="btn btn-tutorial" href="https://apkcombo.com/kiwi-browser/com.kiwibrowser.browser/" target="_blank">Kiwi Browser APK (APKPure)</a>
+  <div class="extension-links">
+    <a class="btn btn-tutorial" href="https://chrome.google.com/webstore/detail/video-downloader-helper/njddlnmjgiophpoahlmgiiaepkpponok" target="_blank">
+      Install Video Downloader Helper (Chrome)
+    </a>
+    <a class="btn btn-tutorial" href="https://apkpure.com/kiwi-browser/com.kiwibrowser.browser" target="_blank">
+      Install Kiwi Browser (Android)
+    </a>
   </div>
 </div>
 
@@ -128,20 +152,14 @@
 <div id="tutorialModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="hideTutorial()">×</span>
-    <h3>Sniffer Tutorial</h3>
-    <ol>
-      <li>Install Chrome Extension or Kiwi Browser (from above links)</li>
-      <li>Open DevTools (F12) → Network tab</li>
-      <li>Play the video or live stream</li>
-      <li>Look for <code>.m3u8</code> or <code>.ts</code> requests</li>
-      <li>Copy the full URL and paste it here</li>
-    </ol>
+    <h3>How to Use</h3>
+    <p>Install the above extension or Kiwi Browser to auto-detect video links like <code>.m3u8</code> or <code>.ts</code>. Play your video or live TV, and the extension will show the direct URL to copy and paste here. If you're confused, contact the site owner <a href="https://t.me/nubcarder" target="_blank">@nubcarder</a>.</p>
   </div>
 </div>
 
 <!-- Telegram Popup -->
 <div id="tgPopup" class="popup">
-  <p><strong>Join our Telegram Channel for more:</strong></p>
+  <p><strong>Join our Telegram Channel for updates:</strong></p>
   <a href="http://t.me/IPTVM3Y" target="_blank" class="btn btn-start">Join Now</a>
   <button class="btn btn-stop" onclick="closePopup()">Cancel</button>
 </div>
@@ -183,7 +201,7 @@
 
   function parsePlaylist() {
     const url = document.getElementById('streamUrl').value;
-    if (!url.endsWith('.m3u') && !url.endsWith('.m3u8') && !url.endsWith('.ts')) return alert("Please enter a valid playlist or stream URL");
+    if (!url.includes('.m3u')) return alert("Only M3U playlist supported for parsing");
 
     fetch(url).then(res => res.text()).then(data => {
       const channels = data.split('#EXTINF').slice(1);
@@ -234,5 +252,6 @@
     }, 1000);
   };
 </script>
+
 </body>
-  </html>
+</html>
