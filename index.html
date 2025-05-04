@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>M3U8 Downloader/Recorder - IPTVM3Y</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f3f4f6;
+    }
+    header {
+      background-color: #111827;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      position: relative;
+    }
+    .tg-name {
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      font-size: 14px;
+      color: #6ee7b7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    input[type="url"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .btn {
+      margin: 10px 5px 10px 0;
+      padding: 10px 20px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn-start { background: #10b981; color: white; }
+    .btn-start:hover { background: #059669; }
+    .btn-stop { background: #ef4444; color: white; }
+    .btn-stop:hover { background: #dc2626; }
+    .btn-tutorial { background: #3b82f6; color: white; }
+    .btn-watch { background: #6366f1; color: white; }
+    .channel-item {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f9fafb;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    video {
+      width: 100%;
+      margin-top: 15px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      width: 90%;
+      max-width: 600px;
+      margin: 10% auto;
+      border-radius: 10px;
+      position: relative;
+    }
+    .close { position: absolute; right: 20px; top: 10px; cursor: pointer; }
+    .popup {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 99;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>M3U8 Downloader/Recorder</h2>
+  <div class="tg-name">@IPTVM3Y</div>
+</header>
+
+<div class="container">
+  <label>Enter .m3u8 / .ts / Playlist URL:</label>
+  <input type="url" id="streamUrl" placeholder="https://example.com/stream.m3u8" />
+
+  <br/><br/>
+  <button class="btn btn-start" id="startBtn" onclick="startRecording()">Start Recording</button>
+  <button class="btn btn-stop" id="stopBtn" style="display:none;" onclick="stopRecording()">Stop Recording</button>
+  <button class="btn btn-watch" onclick="parsePlaylist()">Parse Playlist</button>
+  <button class="btn btn-tutorial" onclick="showTutorial()">Sniffer Tutorial</button>
+
+  <div id="videoContainer"></div>
+  <div id="channelList"></div>
+
+  <div class="extension-links" style="margin-top:20px;">
+    <a class="btn btn-tutorial" href="https://chrome.google.com/webstore/detail/video-downloader-helper/njddlnmjgiophpoahlmgiiaepkpponok" target="_blank">Chrome Extension: Video Downloader Helper</a>
+    <a class="btn btn-tutorial" href="https://apkcombo.com/kiwi-browser/com.kiwibrowser.browser/" target="_blank">Kiwi Browser APK (APKPure)</a>
+  </div>
+</div>
+
+<!-- Tutorial Modal -->
+<div id="tutorialModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="hideTutorial()">×</span>
+    <h3>Sniffer Tutorial</h3>
+    <ol>
+      <li>Install Chrome Extension or Kiwi Browser (from above links)</li>
+      <li>Open DevTools (F12) → Network tab</li>
+      <li>Play the video or live stream</li>
+      <li>Look for <code>.m3u8</code> or <code>.ts</code> requests</li>
+      <li>Copy the full URL and paste it here</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Telegram Popup -->
+<div id="tgPopup" class="popup">
+  <p><strong>Join our Telegram Channel for more:</strong></p>
+  <a href="http://t.me/IPTVM3Y" target="_blank" class="btn btn-start">Join Now</a>
+  <button class="btn btn-stop" onclick="closePopup()">Cancel</button>
+</div>
+
+<script>
+  let recordingUrl = '';
+  let recordingBlobParts = [];
+
+  function startRecording() {
+    const url = document.getElementById('streamUrl').value;
+    if (!url) return alert("Please enter a valid URL");
+
+    recordingUrl = url;
+    recordingBlobParts = [];
+
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+
+    fetch(url).then(resp => resp.blob()).then(blob => {
+      recordingBlobParts.push(blob);
+    });
+
+    alert("Recording started...");
+  }
+
+  function stopRecording() {
+    if (recordingBlobParts.length === 0) return alert("No data to save");
+
+    const blob = new Blob(recordingBlobParts, { type: 'video/mp2t' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'recorded.ts';
+    a.click();
+
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    alert("Recording stopped and file downloaded.");
+  }
+
+  function parsePlaylist() {
+    const url = document.getElementById('streamUrl').value;
+    if (!url.endsWith('.m3u') && !url.endsWith('.m3u8') && !url.endsWith('.ts')) return alert("Please enter a valid playlist or stream URL");
+
+    fetch(url).then(res => res.text()).then(data => {
+      const channels = data.split('#EXTINF').slice(1);
+      const list = document.getElementById('channelList');
+      list.innerHTML = "<h4>Playlist Channels:</h4>";
+
+      channels.forEach(c => {
+        const name = c.split(',')[1]?.split('\n')[0] || "Unknown";
+        const link = c.split('\n').filter(line => line.includes('http'))[0];
+        if (!link) return;
+        const div = document.createElement('div');
+        div.className = 'channel-item';
+        div.innerHTML = `
+          <b>${name}</b><br>
+          <button class="btn btn-watch" onclick="playChannel('${link}')">Watch</button>
+          <button class="btn btn-start" onclick="recordChannel('${link}')">Record</button>
+        `;
+        list.appendChild(div);
+      });
+    });
+  }
+
+  function playChannel(link) {
+    const player = `<video controls autoplay src="${link}"></video>`;
+    document.getElementById('videoContainer').innerHTML = player;
+  }
+
+  function recordChannel(link) {
+    document.getElementById('streamUrl').value = link;
+    startRecording();
+  }
+
+  function showTutorial() {
+    document.getElementById('tutorialModal').style.display = 'block';
+  }
+
+  function hideTutorial() {
+    document.getElementById('tutorialModal').style.display = 'none';
+  }
+
+  function closePopup() {
+    document.getElementById('tgPopup').style.display = 'none';
+  }
+
+  window.onload = function() {
+    setTimeout(() => {
+      document.getElementById('tgPopup').style.display = 'block';
+    }, 1000);
+  };
+</script>
+</body>
+  </html>
